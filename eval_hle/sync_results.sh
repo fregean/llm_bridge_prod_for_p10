@@ -18,39 +18,53 @@ REMOTE_JUDGED_PATH="~/llm_bridge_prod/eval_hle/judged/"
 LOCAL_TARGET_DIR="./eval_hle_results/"
 BACKUP_DIR="./backup/"
 
-
 # --- メイン処理 ---
-echo "古い結果のバックアップを開始します..."
+echo "準備中：バックアップと一時ディレクトリを作成します..."
 
-# バックアップディレクトリと保存先ディレクトリがなければ作成
-mkdir -p "$BACKUP_DIR"
-mkdir -p "$LOCAL_TARGET_DIR"
+# 永続的なバックアップ先
+BACKUP_ROOT_DIR="./backup/"
+BACKUP_LEAD_DIR="${BACKUP_ROOT_DIR}leaderboard/"
+mkdir -p "$BACKUP_LEAD_DIR"
 
-# ローカルに前回の結果ディレクトリが存在する場合のみバックアップ処理を行う
-if [ "$(ls -A $LOCAL_TARGET_DIR 2>/dev/null)" ]; then
-    TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-    BACKUP_NAME="results_${TIMESTAMP}"
+# ダウンロード用の一時ディレクトリを準備（実行のたびにクリーンな状態にする）
+LOCAL_TEMP_DIR="./eval_hle_results_latest/"
+rm -rf "$LOCAL_TEMP_DIR"
+mkdir -p "$LOCAL_TEMP_DIR"
+
+echo ""
+echo "サーバーから最新の結果を一時ディレクトリに同期します..."
+
+# サーバーから一時ディレクトリへ全結果をダウンロード
+rsync -avz -e "ssh -i $SSH_KEY_PATH" "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PREDICTIONS_PATH}" "${LOCAL_TEMP_DIR}"
+rsync -avz -e "ssh -i $SSH_KEY_PATH" "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_LEADERBOARD_PATH}" "${LOCAL_TEMP_DIR}"
+rsync -avz -e "ssh -i $SSH_KEY_PATH" "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_JUDGED_PATH}" "${LOCAL_TEMP_DIR}"
+
+
+echo ""
+echo "結果をバックアップディレクトリに整理します..."
+
+TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+
+# 1. predictions と judged をタイムスタンプ付きフォルダにバックアップ
+if [ -d "${LOCAL_TEMP_DIR}predictions" ] || [ -d "${LOCAL_TEMP_DIR}judged" ]; then
+    VERSIONED_BACKUP_DIR="${BACKUP_ROOT_DIR}results_${TIMESTAMP}/"
+    echo "  -> predictionsとjudgedを '${VERSIONED_BACKUP_DIR}' に保存します。"
+    mkdir -p "$VERSIONED_BACKUP_DIR"
     
-    echo "  -> '${LOCAL_TARGET_DIR}' を '${BACKUP_DIR}${BACKUP_NAME}' に移動します。"
-    mv "$LOCAL_TARGET_DIR" "${BACKUP_DIR}${BACKUP_NAME}"
-    mkdir -p "$LOCAL_TARGET_DIR" # 次のrsyncのために空のディレクトリを再作成
-else
-    echo "  -> バックアップ対象が見つからないため、スキップします。"
+    # 存在するディレクトリのみを移動
+    [ -d "${LOCAL_TEMP_DIR}predictions" ] && mv "${LOCAL_TEMP_DIR}predictions" "$VERSIONED_BACKUP_DIR"
+    [ -d "${LOCAL_TEMP_DIR}judged" ] && mv "${LOCAL_TEMP_DIR}judged" "$VERSIONED_BACKUP_DIR"
 fi
 
-echo ""
-echo "サーバーから最新の結果を同期します..."
+# 2. leaderboard の中身を蓄積用のフォルダにコピー（-n: 既に存在する場合は上書きしない）
+if [ -d "${LOCAL_TEMP_DIR}leaderboard" ]; then
+    echo "  -> backup/leaderboard/ に新しい結果を追加（マージ）します。"
+    cp -rn "${LOCAL_TEMP_DIR}leaderboard/"* "$BACKUP_LEAD_DIR"
+fi
 
-# predictions ディレクトリを同期
-rsync -avz -e "ssh -i $SSH_KEY_PATH" "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PREDICTIONS_PATH}" "${LOCAL_TARGET_DIR}predictions/"
-
-# leaderboard ディレクトリを同期
-rsync -avz -e "ssh -i $SSH_KEY_PATH" "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_LEADERBOARD_PATH}" "${LOCAL_TARGET_DIR}leaderboard/"
-
-# judged ディレクトリを同期
-rsync -avz -e "ssh -i $SSH_KEY_PATH" "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_JUDGED_PATH}" "${LOCAL_TARGET_DIR}judged/"
+# 一時ディレクトリをクリーンアップ
+rm -rf "$LOCAL_TEMP_DIR"
 
 echo ""
-echo "同期が完了しました。"
-echo "最新の結果は '${LOCAL_TARGET_DIR}' にあります。"
-ls -lR "$LOCAL_TARGET_DIR"
+echo "処理が完了しました。"
+echo "全てのバックアップは backup/ ディレクトリにあります。"
