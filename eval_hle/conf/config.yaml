@@ -25,5 +25,7 @@ question_indices:
 654, 694, 708, 709, 739, 748, 751, 772, 780, 783,
 787, 797, 810, 841, 869] # Easyレベルの数学問題
 
+# [168, 431, 433, 481, 580, 626, 1723, 1740] # Biology_Medicine
+
 # judge: meta-llama/llama-3.1-8b-instruct
 judge: google/gemini-flash-1.5
