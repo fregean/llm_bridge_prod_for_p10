@@ -4,19 +4,16 @@
 # 実行前に、ローカルの既存の結果をタイムスタンプ付きでバックアップする。
 #
 
+set -euo pipefail
 # --- 設定 ---
 REMOTE_USER="P10U029"
 REMOTE_HOST="10.255.255.101"
-SSH_KEY_PATH="~/.ssh/id_ed25519"
+SSH_KEY_PATH="$HOME/.ssh/id_ed25519"
 
-# サーバー上の結果ディレクトリのパス
-REMOTE_PREDICTIONS_PATH="~/llm_bridge_prod/eval_hle/predictions/"
-REMOTE_LEADERBOARD_PATH="~/llm_bridge_prod/eval_hle/leaderboard/"
-REMOTE_JUDGED_PATH="~/llm_bridge_prod/eval_hle/judged/"
-
-# ローカルの保存先ディレクトリ
-LOCAL_TARGET_DIR="./eval_hle_results/"
-BACKUP_DIR="./backup/"
+# サーバー上の結果ディレクトリのパス（フォルダごとダウンロード）
+REMOTE_PREDICTIONS_PATH="~/llm_bridge_prod/eval_hle/predictions"
+REMOTE_LEADERBOARD_PATH="~/llm_bridge_prod/eval_hle/leaderboard"
+REMOTE_JUDGED_PATH="~/llm_bridge_prod/eval_hle/judged"
 
 # --- メイン処理 ---
 echo "準備中：バックアップと一時ディレクトリを作成します..."
@@ -35,9 +32,10 @@ echo ""
 echo "サーバーから最新の結果を一時ディレクトリに同期します..."
 
 # サーバーから一時ディレクトリへ全結果をダウンロード
-rsync -avz -e "ssh -i $SSH_KEY_PATH" "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PREDICTIONS_PATH}" "${LOCAL_TEMP_DIR}"
-rsync -avz -e "ssh -i $SSH_KEY_PATH" "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_LEADERBOARD_PATH}" "${LOCAL_TEMP_DIR}"
-rsync -avz -e "ssh -i $SSH_KEY_PATH" "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_JUDGED_PATH}" "${LOCAL_TEMP_DIR}"
+RSYNC_OPTS="-avz --update"
+rsync $RSYNC_OPTS -e "ssh -i $SSH_KEY_PATH" "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PREDICTIONS_PATH}" "${LOCAL_TEMP_DIR}"
+rsync $RSYNC_OPTS -e "ssh -i $SSH_KEY_PATH" "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_LEADERBOARD_PATH}" "${LOCAL_TEMP_DIR}"
+rsync $RSYNC_OPTS -e "ssh -i $SSH_KEY_PATH" "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_JUDGED_PATH}" "${LOCAL_TEMP_DIR}"
 
 
 echo ""
@@ -59,7 +57,7 @@ fi
 # 2. leaderboard の中身を蓄積用のフォルダにコピー（-n: 既に存在する場合は上書きしない）
 if [ -d "${LOCAL_TEMP_DIR}leaderboard" ]; then
     echo "  -> backup/leaderboard/ に新しい結果を追加（マージ）します。"
-    cp -rn "${LOCAL_TEMP_DIR}leaderboard/"* "$BACKUP_LEAD_DIR"
+    rsync -av --ignore-existing "${LOCAL_TEMP_DIR}leaderboard/" "$BACKUP_LEAD_DIR"
 fi
 
 # 一時ディレクトリをクリーンアップ
