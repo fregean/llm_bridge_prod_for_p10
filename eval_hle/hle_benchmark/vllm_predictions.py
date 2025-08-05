@@ -28,8 +28,6 @@ from datasets import load_dataset
 from openai import AsyncOpenAI
 from tqdm.asyncio import tqdm_asyncio
 from hle_benchmark._configs import Config
-import re
-from collections import Counter
 
 
 SYSTEM_EXACT_ANSWER = "Your response should be in the following format:\nExplanation: {your explanation for your final answer}\nExact Answer: {your succinct, final answer}\nConfidence: {your confidence score between 0% and 100% for your answer}"
@@ -69,40 +67,10 @@ async def attempt_question(args, question):
             messages=messages,
             stream=False,
         ) 
-        # content = response.choices[0].message.content
-        # if response.choices[0].finish_reason == "length":
-        #     return None
-        # tokens = json.loads(response.usage.model_dump_json())
-        completions = []
-        for choice in response.choices:
-            full_content = choice.message.content
-            answer = None
-            # 両方の回答形式 ("Exact Answer:" と "Answer:") に対応する正規表現
-            match = re.search(r"(?:Exact Answer|Answer):\s*(.*)", full_content, re.DOTALL)
-            if match:
-                # 回答部分を抽出し、前後の空白や余分な改行を取り除く
-                answer = match.group(1).strip().split('\n')[0]
-            
-            if answer:
-                completions.append({"answer": answer, "full_content": full_content})
-
-        if not completions:
-            # どの候補からも回答を抽出できなかった場合
-            print("Warning: Could not parse answer from any of the choices.")
+        content = response.choices[0].message.content
+        if response.choices[0].finish_reason == "length":
             return None
-
-        # 抽出した回答で多数決を実行
-        answer_counts = Counter(c["answer"] for c in completions)
-        majority_answer = answer_counts.most_common(1)[0][0]
-
-        # 多数決で選ばれた回答が含まれる、最初の完全なレスポンスを見つける
-        final_content = next(c["full_content"] for c in completions if c["answer"] == majority_answer)
-
-        # 最終的に保存するcontentを、多数決で選ばれたものに差し替える
-        content = final_content
-        # トークン数はリクエスト全体で共通なので、そのまま使用
         tokens = json.loads(response.usage.model_dump_json())
-
         if args.reasoning:
             tokens["reasoning_content"] = response.choices[0].message.reasoning_content
     except Exception as e:
