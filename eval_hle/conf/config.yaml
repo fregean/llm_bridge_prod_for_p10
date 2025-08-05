@@ -8,12 +8,12 @@ base_url: http://192.168.11.78:8000/v1
 model: deepseek-r1
 max_tokens: 38000
 reasoning: true
-n_samples: 5
-temperature: 0.6
-top_p: 0.95
+n_samples: 1
+temperature: 0.0
+top_p: 1.0
 
 # sample with multimodal is 2500, so text-only sample is about 2400
-num_workers: 40
+num_workers: 80
 # max_samples: 20
 question_indices: [8, 98, 103, 138, 208, 223, 224, 225, 232, 233,
 234, 256, 264, 287, 316, 319, 325, 326, 332, 393,
