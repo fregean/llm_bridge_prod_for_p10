@@ -12,6 +12,9 @@ eval_hle/eval_hle_results/
 eval_hle/backup/
 eval_dna/datasets/
 
+# Source code directories (not managed by git)
+src/
+
 # Common Python ignores
 __pycache__/
 *.py[cod]
@@ -98,6 +101,10 @@ Pipfile.lock
 
 # poetry
 poetry.lock
+
+# uv lock files
+requirements.lock
+requirements-dev.lock
 
 # pdm
 .pdm.toml
