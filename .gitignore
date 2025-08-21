@@ -10,6 +10,7 @@
 # Evaluation results and backup directories
 eval_hle/eval_hle_results/
 eval_hle/backup/
+eval_hle/outputs/
 eval_dna/datasets/
 
 # Source code directories (not managed by git)
