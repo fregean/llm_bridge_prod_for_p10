@@ -27,4 +27,4 @@ question_indices: [8, 98, 103, 138, 208, 223, 224, 225, 232, 233,
 107, 176, 185, 334, 670, 837, 923, 1025, 1053, 1134, 1136, 1293] # Computer Science/AI
 
 # judge: meta-llama/llama-3.1-8b-instruct
-judge: google/gemini-flash-1.5
+judge: o3-mini-2025-01-31
