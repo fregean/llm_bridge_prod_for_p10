@@ -5,7 +5,7 @@ provider: vllm # [vllm]
 # vLLMヘッドノードのIPアドレス
 base_url: http://192.168.11.78:8000/v1
 
-model: deepseek-r1
+model: qwen3-235b_medmcqa_n10_last4
 max_tokens: 4000
 reasoning: true
 n_samples: 1
