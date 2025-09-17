@@ -3,6 +3,7 @@ import json
 import csv
 import argparse
 import os
+import sys
 from pathlib import Path
 from typing import Dict, List, Any, Union
 
@@ -87,6 +88,9 @@ def convert_to_csv(json_file: str, csv_file: str = None) -> str:
                     if key not in all_keys:
                         fieldnames.append(key)
                         all_keys.add(key)
+    
+    # Increase CSV field size limit to handle long response texts
+    csv.field_size_limit(sys.maxsize)
     
     with open(csv_file, 'w', newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
