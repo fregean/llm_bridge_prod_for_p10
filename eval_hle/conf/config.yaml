@@ -5,7 +5,7 @@ provider: vllm # [vllm]
 # vLLMヘッドノードのIPアドレス
 base_url: http://192.168.11.78:8000/v1
 
-model: qwen3-235b_medmcqa_n10_last4
+model: Qwen3-235B-A22B-Thinking-dpd-pmqa
 max_tokens: 4000
 reasoning: true
 n_samples: 1
@@ -26,5 +26,5 @@ question_indices: [8, 98, 103, 138, 208, 223, 224, 225, 232, 233,
 405, 448, 461, 554, 846, 1270, 1311, 1660, # Chemistry
 107, 176, 185, 334, 670, 837, 923, 1025, 1053, 1134, 1136, 1293] # Computer Science/AI
 
-# judge: meta-llama/llama-3.1-8b-instruct
+#judge: deepseek/deepseek-r1-0528:free
 judge: o3-mini-2025-01-31
