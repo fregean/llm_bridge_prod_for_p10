@@ -13,6 +13,9 @@ eval_hle/backup/
 eval_hle/outputs/
 eval_dna/datasets/
 
+# Hugging Face cache directory
+eval_hle/.hf_cache/
+
 # Source code directories (not managed by git)
 src/
 
